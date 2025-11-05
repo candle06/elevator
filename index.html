@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Elevator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* 기존 CSS 유지 (생략 가능) */
+</style>
+</head>
+<body>
+<canvas id="particle-wrap"></canvas>
+<div class="app">
+  <header><div class="logo">Elevator</div></header>
+  <div class="subtitle">승강기 정보 조회</div>
+  <div class="search">
+    <div class="box"><input id="q" type="text" placeholder="건물명 입력 (예: 롯데월드)"></div>
+    <button class="btn" id="searchBtn">검색</button>
+  </div>
+  <div id="result-list"></div>
+  <div class="footer">Elevator Demo</div>
+</div>
+
+<script>
+const qInput = document.getElementById('q');
+const btn = document.getElementById('searchBtn');
+const list = document.getElementById('result-list');
+
+function getIcons(type){
+  const icons = [];
+  if(type?.includes('자동차')) icons.push('https://img.icons8.com/ios-filled/50/ffffff/car.png');
+  if(type?.includes('승객')) icons.push('https://img.icons8.com/ios-filled/50/ffffff/elevator.png');
+  if(type?.includes('화물')) icons.push('https://img.icons8.com/ios-filled/50/ffffff/package.png');
+  if(type?.includes('비상')) icons.push('https://img.icons8.com/ios-filled/50/ffffff/alarm.png');
+  if(type?.includes('피난')) icons.push('https://img.icons8.com/ios-filled/50/ffffff/running.png');
+  if(type?.includes('전망')) icons.push('https://img.icons8.com/ios-filled/50/ffffff/binoculars.png');
+  if(type?.includes('장애')) icons.push('https://img.icons8.com/ios-filled/50/ffffff/wheelchair.png');
+  if(type?.includes('승객화물')){
+    icons.push('https://img.icons8.com/ios-filled/50/ffffff/elevator.png');
+    icons.push('https://img.icons8.com/ios-filled/50/ffffff/package.png');
+  }
+  if(type?.includes('소방')) icons.push('https://img.icons8.com/ios-filled/50/ffffff/fire.png');
+  return icons;
+}
+
+function createCard(d,i){
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.style.animationDelay = `${i*0.1}s`;
+  div.innerHTML = `
+    <div class="content">
+      <h3>${d.ElevatorName || d.BuildingName || '-'}</h3>
+      <div class="meta">${d.ElevatorNo || '-'} • ${d.ElevatorType || '-'}</div>
+      <div class="icons">${getIcons(d.ElevatorType).map(url=>`<img src="${url}" alt="">`).join('')}</div>
+      <div class="info">
+        <strong>모델명:</strong> ${d.Model || '-'}<br>
+        <strong>정원/용량:</strong> ${d.Capacity || '-'}<br>
+        <strong>운행층수:</strong> ${d.FloorCount || '-'}<br>
+        <strong>정격속도:</strong> ${d.Speed || '-'}<br>
+        <strong>제조사:</strong> ${d.Manufacturer || '-'}<br>
+        <strong>설치일자:</strong> ${d.InstallDate || '-'}
+      </div>
+    </div>
+  `;
+  return div;
+}
+
+btn.addEventListener('click', async ()=>{
+  list.innerHTML = '';
+  const keyword = qInput.value.trim();
+  if(!keyword) return list.innerHTML = "<p>검색어를 입력해주세요.</p>";
+
+  try {
+    const res = await fetch(`/search?q=${encodeURIComponent(keyword)}`);
+    const filtered = await res.json();
+    if(filtered.length === 0) { list.innerHTML = "<p>검색 결과가 없습니다.</p>"; return; }
+
+    filtered.forEach((d,i)=>list.appendChild(createCard(d,i)));
+  } catch(e){
+    list.innerHTML = "<p>API 호출 실패: " + e.message + "</p>";
+  }
+});
+</script>
+</body>
+</html>
